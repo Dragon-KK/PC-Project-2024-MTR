@@ -14,7 +14,6 @@ TANK_DEF() Tank(std::size_t initial_capacity){
 
 TANK_DEF(void) resize(std::size_t new_capacity){
     assert(filled <= new_capacity);
-        
     max_capacity = new_capacity;
     T* new_data = static_cast<T*>(realloc(data, max_capacity * sizeof(T)));
     assert(!(new_data == nullptr && max_capacity > 0));
@@ -36,7 +35,11 @@ TANK_DEF(void) push_back(T item){
 
 TANK_DEF(T) pop_back(){
     assert(filled > 0);
-    return data[--filled];
+    T removed = data[--filled];
+    if (filled < (max_capacity / 2)){
+        resize(max_capacity / 2);
+    }
+    return removed;
 }
 
 TANK_DEF(T) at(long long int index){

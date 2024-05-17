@@ -33,6 +33,7 @@ public:
 
     /**
      * Pops the last element from the array and returns it
+     * NOTE: This will also reallocate to a smaller array if its size is less than half the allocated space (Its kinda stupid but thats what the app requested)
     */
     T pop_back();
 
