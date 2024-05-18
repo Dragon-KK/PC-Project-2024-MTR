@@ -1,0 +1,25 @@
+Here is how I understand it (You can search google for a formal definition).
+If your program (process) was a box of resources then a thread is just a worker who has access to everything in the box and can run concurrently with other threads under the same program
+A process contains many threads, communiation between processes is a bit more involved, threads on the other hand have access to all the resources of their parent process
+A process is just a bunch of threads sharing the same context :)
+
+
+The GPU is a hardware component that is normally used for handling display related stuff (like shaders)
+Due to this GPUs allow for high performance multithreading (usually 1000s of concurrent threads) albeit restrictions on what can be done on each thread (usually each thread only does simple tasks)
+A CPU on the other hand allows one to run resource intensive threads but a drawback is that the number of threads that can be run concurrently is significantly lesser than a GPU
+TS: Lots of parallel tasks -> GPU; Sequential tasks -> CPU; :)
+
+
+First of all the code would like error out without explicitly returning NULL
+Ideally counter would be 2 * num_increments
+But with the code as it is for non small num_increments we get some number less than expected
+This happens because both thread try to simultaneously set counter to counter + 1
+For example counter was 1 at some instant. thread1 reads counter and sets it to 2 but thread2 could have read counter before thread1 sets it and it would also set it to 2.
+This essentially causes a skip in an increment
+To fix this just create a mutex and whenever a thread wants to update counter it must first lock the mutex (This ensures that both threads never fall for this race condition)
+:)
+Also I noticed that marking counter as volatile made no difference so idk what's up with that
+
+https://stackoverflow.com/a/4437555
+This post had a very nice explanation on what it meant
+Basically its to tell the compiler not to try and be smart and optimize out usage of the variable (we are hinting the compiler that it can be changed in ways that it may not be able to predict)
