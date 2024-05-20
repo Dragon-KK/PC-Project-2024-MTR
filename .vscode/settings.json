@@ -18,6 +18,7 @@
         "regex": "cpp",
         "valarray": "cpp",
         "chrono": "cpp",
-        "variant": "cpp"
+        "variant": "cpp",
+        "cstdlib": "c"
     }
 }

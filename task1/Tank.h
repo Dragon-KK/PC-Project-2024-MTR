@@ -1,4 +1,4 @@
-#pragma once
+#pragma once // Allows the file to be included only once
 
 // It would've been lot easier to just define everything in the header file itself
 // (but ig this way of doing things makes stuff easier in the long run)
