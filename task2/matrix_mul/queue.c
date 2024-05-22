@@ -41,10 +41,11 @@ struct Queue* QUEUE_create(){
     
     pthread_cond_init(&q->read_ready_cond, NULL);
     pthread_cond_init(&q->write_ready_cond, NULL);
-    pthread_ready_mutex_init(&q->rw_mutex, NULL);
-    pthread_ready_mutex_init(&q->dispatch_counter_mutex, NULL);
-    pthread_ready_mutex_init(&q->live_counter_mutex, NULL);
+    pthread_mutex_init(&q->rw_mutex, NULL);
+    pthread_mutex_init(&q->dispatch_counter_mutex, NULL);
+    pthread_mutex_init(&q->live_counter_mutex, NULL);
 
+    
     return q;
 }
 
@@ -105,9 +106,9 @@ void* QUEUE_get(struct Queue* queue){ // Consider using pcond
             pthread_mutex_lock(&queue->live_counter_mutex);
             --(queue->live_chunk_count);
             pthread_mutex_unlock(&queue->live_counter_mutex);
-            removed_chunk = true;
         }
         
+        removed_chunk = true;
         front = queue->front;
     }
 
@@ -131,15 +132,16 @@ void* QUEUE_add(struct Queue* queue, void* task){
     while (queue->back->filled >= _QUEUE_CHUNK_SIZE && queue->live_chunk_count >= _QUEUE_MAX_LIVE_CHUNKS){
         pthread_cond_wait(&queue->write_ready_cond, &queue->rw_mutex);
     }
-
+    
     struct QueueChunk* back = queue->back;
     if (back->filled >= _QUEUE_CHUNK_SIZE){ // We need to make a new chunk
         back = QUEUE_create_chunk();
         queue->back->next_chunk = back;
         queue->back = back;
-        thread_mutex_lock(&queue->live_counter_mutex);
+        pthread_mutex_lock(&queue->live_counter_mutex);
         ++(queue->live_chunk_count);
         pthread_mutex_unlock(&queue->live_counter_mutex);
+        
     }
 
     back->tasks[back->filled++] = task;

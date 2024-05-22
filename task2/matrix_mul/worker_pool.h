@@ -30,7 +30,7 @@ struct WorkerPool{
     struct WP_Argument* arg;
 };
 
-void* _WP_run_helper_function(struct WP_Argument* arg);
+void* _WP_run_helper_function(void* arg);
 struct WorkerPool* WP_create(void (*func)(void *), int thread_count);
 void WP_enqueue_task(struct WorkerPool* worker_pool, void* task);
 void WP_request_stop(struct WorkerPool* worker_pool);

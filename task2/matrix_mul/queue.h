@@ -8,7 +8,7 @@
 // The max number of tasks stored in each QueueChunk
 #define _QUEUE_CHUNK_SIZE 1000
 // The max number of QueueChunks that can exist at a given point
-#define _QUEUE_MAX_LIVE_CHUNKS 100
+#define _QUEUE_MAX_LIVE_CHUNKS 10
 
 struct QueueChunk{
     void** tasks;

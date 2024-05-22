@@ -22,13 +22,14 @@ int main(int argc, char* argv[]){
     
     init_operand(operand_as, options.operations); init_operand(operand_bs, options.operations);
     
-    clock_t start = clock();
+    long long int start = time_ms();
+    
     for (long long int i = 0; i < options.operations; ++i){
         multiply(operand_as[i], operand_bs[i], products[i]);
     }
-    clock_t end = clock();
+    long long int end = time_ms();
     
-    printf("Time elapsed: %ldms\n", (end - start) / (CLOCKS_PER_SEC / 1000));
+    printf("Time elapsed: %ldms\n", end - start);
 
     if (options.log_products){
         FILE* log_file = fopen(PRODUCTS_LOG_FILE, "w");

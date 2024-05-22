@@ -19,6 +19,7 @@
         "valarray": "cpp",
         "chrono": "cpp",
         "variant": "cpp",
-        "cstdlib": "c"
+        "cstdlib": "c",
+        "common.h": "c"
     }
 }

@@ -1,9 +1,10 @@
 #include "worker_pool.h"
 
 
-void* _WP_run_helper_function(struct WP_Argument* arg){
+void* _WP_run_helper_function(void* varg){
+    struct WP_Argument* arg = varg;
     struct Queue* queue = arg->queue;
-    void *(*func)(void *) = arg->func;
+    void (*func)(void *) = arg->func;
 
     while (true){
         struct WP_TaskWrapper* tw = QUEUE_get(queue); // NOTE: This is blocking
@@ -17,6 +18,7 @@ void* _WP_run_helper_function(struct WP_Argument* arg){
             free(tw->task);
             free(tw);
             QUEUE_register_completion(queue);
+            continue;
         }
         fprintf(stderr, "UNREACHABLE! Unexpected task_type %d\n", tw->task_type);
         exit(1);
@@ -41,6 +43,7 @@ struct WorkerPool* WP_create(void (*func)(void *), int thread_count){
         exit(1);
     }
 
+    wp->thread_count = thread_count;
     wp->threads = malloc(wp->thread_count * sizeof(pthread_t));
     if (wp->threads == NULL){
         fprintf(stderr, "ERROR! Could not allocate memory for WorkerPool\n");
@@ -50,7 +53,6 @@ struct WorkerPool* WP_create(void (*func)(void *), int thread_count){
     wp->arg->queue = QUEUE_create();
     wp->arg->func = func;
 
-    wp->thread_count = thread_count;
 
     for (int i = 0; i < wp->thread_count; ++i){
         pthread_create(&(wp->threads[i]), NULL, _WP_run_helper_function, (void*)wp->arg);
@@ -71,7 +73,6 @@ void WP_enqueue_task(struct WorkerPool* worker_pool, void* task){
         fprintf(stderr, "ERROR! Could not allocate memory for task wrapper\n");
         exit(1);
     }
-
     tw->task = task;
     tw->task_type = WP_EXEC;
 
