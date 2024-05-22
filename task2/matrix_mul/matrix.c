@@ -48,5 +48,5 @@ void MATRIX_print(struct Matrix* matrix, FILE* fd){
  * Gets the index of the element based on row and column number
 */
 inline long long int MATRIX_idx(long long int row, long long int col, struct Matrix* matrix){
-    return row * matrix->rows + col;
+    return row * matrix->cols + col;
 }

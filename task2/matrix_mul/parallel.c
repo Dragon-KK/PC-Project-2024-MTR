@@ -8,13 +8,19 @@
 #include "worker_pool.h"
 
 #define PRODUCTS_LOG_FILE "matrix_mul_par.log"
+
+// Too small and the threads wait a lot more causing bad performance and too big causes it to become basically sequential (balance is key)
+#define TASK_CHUNK_SIZE 1000
+// I've got 6 coures so my best performance would be with 12 threads (Anything more really doesn't improve performance) but having just a few more threads has negligible downsides
 #define WORKER_POOL_THREAD_COUNT 16
 
 #pragma region Business Logix
 struct MultiplicationTask{
-    struct Matrix* op1;
-    struct Matrix* op2;
-    struct Matrix* res;
+    struct Matrix* op1; // The premultiplicand
+    struct Matrix* op2; // The postmultiplicand
+    struct Matrix* res; // The matrix in which the product is to be stored
+    long long int start_idx; // The start of the chunk that this task is supposed to compute
+    long long int end_idx; // The end of the chunk that this task is supposed to compute
 };
 
 void sub_multiplication_handler(void* task);
@@ -81,22 +87,29 @@ int main(int argc, char* argv[]){
 
 /**
  * Handles part of the matrix multiplication (To be run in parallel)
+ * This basically calculates the result of a product
 */
 void sub_multiplication_handler(void* vtask){
     struct MultiplicationTask* task = vtask;
 
-    for (long long int row = 0; row < task->res->rows; ++row){
-        for (long long int col = 0; col < task->res->cols; ++col){
-            task->res->data[MATRIX_idx(row, col, task->res)] = 0;
-            for (long long int k = 0; k < task->op1->cols; ++k){
-                task->res->data[MATRIX_idx(row, col, task->res)] += task->op1->data[MATRIX_idx(row, k, task->op1)] * task->op2->data[MATRIX_idx(k, col, task->op2)];
-            }
+    long long int row = task->start_idx / task->res->cols;
+    long long int col = task->start_idx % task->res->cols;
+    for (long long int idx = task->start_idx; idx < task->end_idx; ++idx){
+        task->res->data[idx] = 0;
+        for (long long int k = 0; k < task->op1->cols; ++k){
+            // Just get the row and column then you can easily reuse this shit
+            task->res->data[idx] += task->op1->data[MATRIX_idx(row, k, task->op1)] * task->op2->data[MATRIX_idx(k, col, task->op2)];
+        }
+        ++col;
+        if (col == task->res->cols){
+            col = 0;
+            ++row;
         }
     }
 }
 
 /**
- * Enqueues the multiplicatin operation to the worker pool
+ * Enqueues the multiplication operation to the worker pool
  * RAISES: Exits if the matrices provided are not of correct dimensions or if could not allocate memory describe the task
 */
 void request_multiplication(struct Matrix* operand_a, struct Matrix* operand_b, struct Matrix* product, struct WorkerPool* worker_pool){
@@ -105,16 +118,22 @@ void request_multiplication(struct Matrix* operand_a, struct Matrix* operand_b, 
         exit(1);
     }
 
-    struct MultiplicationTask* task = malloc(sizeof(struct MultiplicationTask));
-    if (task == NULL){
-        fprintf(stderr, "ERROR! Could not allocate memory for queueing task\n");
-        exit(1);   
+    long long int max_idx =  product->cols * product->rows;
+    for (long long int idx = 0; idx < max_idx; idx += TASK_CHUNK_SIZE){
+        struct MultiplicationTask* task = malloc(sizeof(struct MultiplicationTask));
+        if (task == NULL){
+            fprintf(stderr, "ERROR! Could not allocate memory for queueing task\n");
+            exit(1);   
+        }
+        task->op1 = operand_a;
+        task->op2 = operand_b;
+        task->res = product;
+        task->start_idx = idx;
+        task->end_idx = (max_idx - idx >= TASK_CHUNK_SIZE)? (idx + TASK_CHUNK_SIZE) : max_idx;
+        
+        WP_enqueue_task(worker_pool, (void*) task);
     }
-    task->op1 = operand_a;
-    task->op2 = operand_b;
-    task->res = product;
     
-    WP_enqueue_task(worker_pool, (void*) task);
     
 }
 #pragma endregion
