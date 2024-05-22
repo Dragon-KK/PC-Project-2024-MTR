@@ -31,6 +31,7 @@ int main(int argc, char *argv[])
     num_increments = atoi(argv[1]);
 
     pthread_t thread1, thread2;
+    pthread_mutex_init(&counter_mutex, NULL);
 
     pthread_create(&thread1, NULL, &increment_counter, &num_increments);
     pthread_create(&thread2, NULL, &increment_counter, &num_increments);
