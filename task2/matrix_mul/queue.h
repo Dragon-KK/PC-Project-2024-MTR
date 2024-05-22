@@ -22,8 +22,9 @@ struct Queue{
     struct QueueChunk* back;
     int live_chunk_count;
     int dispatched;
-    pthread_mutex_t read_ready_mutex;
-    pthread_mutex_t write_mutex;
+    pthread_cond_t read_ready_cond;
+    pthread_cond_t write_ready_cond;
+    pthread_mutex_t rw_mutex;
     pthread_mutex_t dispatch_counter_mutex;
     pthread_mutex_t live_counter_mutex;
 };
