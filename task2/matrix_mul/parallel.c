@@ -8,7 +8,7 @@
 #include "worker_pool.h"
 
 #define PRODUCTS_LOG_FILE "matrix_mul_par.log"
-#define WORKER_POOL_THREAD_COUNT 8
+#define WORKER_POOL_THREAD_COUNT 16
 
 #pragma region Business Logix
 struct MultiplicationTask{
@@ -43,7 +43,7 @@ int main(int argc, char* argv[]){
     
     long long int end = time_ms();
     
-    printf("Time elapsed: %ldms\n", (end - start) / (CLOCKS_PER_SEC / 1000));
+    printf("Time elapsed: %ldms\n", end - start);
 
     if (options.log_products){
         FILE* log_file = fopen(PRODUCTS_LOG_FILE, "w");
