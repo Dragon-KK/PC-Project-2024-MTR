@@ -1,3 +1,22 @@
+/**
+ * EE23B135 Kaushik G Iyer
+ * 23/05/2023
+ * 
+ * Does a bunch of matrix multiplications on a single thread
+ *
+ * Inputs:
+ *  matrix_order{number > 0}
+ *  operations{number > 0}
+ *  log_products{number != 0?}
+ * 
+ * Outputs:
+ *  stdout:
+ *      Time elapsed: {time}ms
+ *  PRODUCTS_LOG_FILE: (only if options.log_products is true)
+ *      Outputs the matrices multiplied and the product obtained
+ * 
+*/ 
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
