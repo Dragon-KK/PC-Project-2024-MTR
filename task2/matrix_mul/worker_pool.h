@@ -1,6 +1,11 @@
 /**
- * Contains definitions that are used for the creation and management of worker pools
-*/
+ * EE23B135 Kaushik G Iyer
+ * 23/05/2024
+ * 
+ * Provides definitions for WorkerPool
+ * 
+*/ 
+
 
 #pragma once
 #include <pthread.h>
@@ -10,24 +15,24 @@
 #include "queue.h"
 
 struct WP_Argument{
-    struct Queue* queue;
-    void (*func)(void *);
+    struct Queue* queue; // The queue of tasks that the WorkerPool is to do
+    void (*func)(void *); // The function that operates on each task
 };
 
 enum WP_TaskType{
-    WP_EXEC,
-    WP_KILL
+    WP_EXEC, // Requests the worker to finish a task
+    WP_KILL, // Notifies the worker to just kill itself
 };
 
 struct WP_TaskWrapper{
-    void* task;
-    enum WP_TaskType task_type;
+    void* task; // The task to be accomplished
+    enum WP_TaskType task_type; // I'm bored
 };
 
 struct WorkerPool{
-    pthread_t* threads;
-    int thread_count;
-    struct WP_Argument* arg;
+    pthread_t* threads; // An array of all pthreads spawned
+    int thread_count; // A count of number of threads spawned
+    struct WP_Argument* arg; // Passed to each worker when their thread is spawned
 };
 
 void* _WP_run_helper_function(void* arg);

@@ -2,7 +2,8 @@
 
 /**
  * Gets current time in ms
- * https://stackoverflow.com/a/44896326
+ * NOTE: This is used over clock() as clock returned the sum of cpu time used in all threads (Which is not what we wanted to measure)
+ * Yeeted from: https://stackoverflow.com/a/44896326
 */
 long long time_ms(void) {
     struct timeval tv;
@@ -14,7 +15,7 @@ long long time_ms(void) {
  * Generates a smallish random number lamo
 */
 int random_number(){
-    return (int)(((double)rand() / (double)RAND_MAX) * (int)((double)rand() / ((double)RAND_MAX + 1) * 10)) - 3;
+    return (rand()%11) - 5;
 }
 
 /**
@@ -30,13 +31,12 @@ void init_operand(struct Matrix** operand_array, long long int size){
 
 
 /**
- * Allocates memory for all the list of matrices
- * NOTE: This will not initial the values set in the matrices
+ * Initializes an array of matrices
+ * NOTE: This will not set values in the matrices
  * RAISES: Exits if could not allocate memory
 */
 struct Matrix** create_matrix_array(long long int size, long long int rows, long long int cols){
     struct Matrix** array = malloc(size * sizeof(struct Matrix*));
-
     if (array == NULL){
         fprintf(stderr, "ERROR! Could not allocated memory for the matrices :(\n");
         exit(1);
@@ -47,8 +47,9 @@ struct Matrix** create_matrix_array(long long int size, long long int rows, long
     }
     return array;
 }
+
 /**
- * Frees any memory associated with the matrix array
+ * Frees all memory associated with the matrix array
 */
 void free_matrix_array(struct Matrix** array, long long int size){
     for (long long int i = 0; i < size; ++i){

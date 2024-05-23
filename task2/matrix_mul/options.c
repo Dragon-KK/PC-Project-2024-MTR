@@ -1,5 +1,3 @@
-#include <stdio.h>
-#include <stdlib.h>
 #include "options.h"
 
 /**
@@ -12,7 +10,7 @@ void OPTIONS_set(struct Options* options, int argc, char* argv[]){
     options->log_products = (argc > 3)? atoi(argv[3]) : false;
     
     if (options->matrix_order <= 0 || options->operations <= 0){
-        fprintf(stderr, "ERROR! Invalid arguments to `%s`. Expected usage: `%s matrix_order{number > 0} operations{number > 0} log_products?`\n", argv[0], argv[0]);
+        fprintf(stderr, "ERROR! Invalid arguments to `%s`. Expected usage: `%s matrix_order{number > 0} operations{number > 0} log_products{number != 0?}`\n", argv[0], argv[0]);
         exit(1);
     }
 }

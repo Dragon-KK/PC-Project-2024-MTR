@@ -11,7 +11,7 @@
 
 // Too small and the threads wait a lot more causing bad performance and too big causes it to become basically sequential (balance is key)
 #define TASK_CHUNK_SIZE 1000
-// I've got 6 coures so my best performance would be with 12 threads (Anything more really doesn't improve performance) but having just a few more threads has negligible downsides
+// I've got 6 cours so my best performance would be with 12 threads (Anything more really doesn't improve performance) but having just a few more threads has negligible downsides
 #define WORKER_POOL_THREAD_COUNT 16
 
 #pragma region Business Logix
@@ -31,27 +31,28 @@ int main(int argc, char* argv[]){
     srand(time(NULL));
     struct Options options; OPTIONS_set(&options, argc, argv);
 
+    // Create matrices for doing multiplication
     struct Matrix** operand_as = create_matrix_array(options.operations, options.matrix_order, options.matrix_order);
     struct Matrix** operand_bs = create_matrix_array(options.operations, options.matrix_order, options.matrix_order);
     struct Matrix** products   = create_matrix_array(options.operations, options.matrix_order, options.matrix_order);
     
+    // Fill the operand matrices with random values
     init_operand(operand_as, options.operations); init_operand(operand_bs, options.operations);
     
+    // Spawn a bunch of threads that all do the sub_multiplication
     struct WorkerPool* worker_pool = WP_create(sub_multiplication_handler, WORKER_POOL_THREAD_COUNT);
 
     long long int start = time_ms();
-    
     for (long long int i = 0; i < options.operations; ++i){
         request_multiplication(operand_as[i], operand_bs[i], products[i], worker_pool);
     }
-    WP_request_stop(worker_pool);
-    WP_join(worker_pool);
-    
+    WP_request_stop(worker_pool); // Request all threads to finish
+    WP_join(worker_pool); // Waits for all threads to finish
     long long int end = time_ms();
     
     printf("Time elapsed: %ldms\n", end - start);
 
-    if (options.log_products){
+    if (options.log_products){ // Stores the results of multiplications in PRODUCTS_LOG_FILE
         FILE* log_file = fopen(PRODUCTS_LOG_FILE, "w");
 
         for (long long int i = 0; i < options.operations; ++i){
@@ -63,6 +64,7 @@ int main(int argc, char* argv[]){
         fclose(log_file);
     }
 
+    // Just some sanity checks to make sure my worker_pool logic is not fucked
     if (worker_pool->arg->queue->dispatched != 0){
         fprintf(stderr, "ERROR! Core logic issue, there are still %d dispatched tasks\n", worker_pool->arg->queue->dispatched);
         exit(1);
@@ -76,6 +78,7 @@ int main(int argc, char* argv[]){
         exit(1);
     }
 
+    // Free the data :)
     WP_free(worker_pool);
 
     free_matrix_array(operand_as, options.operations);
@@ -87,7 +90,7 @@ int main(int argc, char* argv[]){
 
 /**
  * Handles part of the matrix multiplication (To be run in parallel)
- * This basically calculates the result of a product
+ * This basically calculates the result of some cells of the product matrix
 */
 void sub_multiplication_handler(void* vtask){
     struct MultiplicationTask* task = vtask;
@@ -96,8 +99,7 @@ void sub_multiplication_handler(void* vtask){
     long long int col = task->start_idx % task->res->cols;
     for (long long int idx = task->start_idx; idx < task->end_idx; ++idx){
         task->res->data[idx] = 0;
-        for (long long int k = 0; k < task->op1->cols; ++k){
-            // Just get the row and column then you can easily reuse this shit
+        for (long long int k = 0; k < task->op1->cols; ++k){ // Just your standard matrix multiplication again
             task->res->data[idx] += task->op1->data[MATRIX_idx(row, k, task->op1)] * task->op2->data[MATRIX_idx(k, col, task->op2)];
         }
         ++col;
@@ -129,11 +131,12 @@ void request_multiplication(struct Matrix* operand_a, struct Matrix* operand_b, 
         task->op2 = operand_b;
         task->res = product;
         task->start_idx = idx;
+
+        // I should probably remove the ternary by just moving addition of last chunk outside the loop
+        // But this looks cleaner (full trust vro)
         task->end_idx = (max_idx - idx >= TASK_CHUNK_SIZE)? (idx + TASK_CHUNK_SIZE) : max_idx;
         
         WP_enqueue_task(worker_pool, (void*) task);
     }
-    
-    
 }
 #pragma endregion

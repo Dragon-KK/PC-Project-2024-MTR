@@ -1,6 +1,10 @@
 /**
- * Contains utility functions that are used in both sequential and parallel
-*/
+ * EE23B135 Kaushik G Iyer
+ * 23/05/2024
+ * 
+ * Provides a common set of utilities used by both parallel.c and sequential.c
+ * 
+*/ 
 
 #pragma once
 #include <stdlib.h>

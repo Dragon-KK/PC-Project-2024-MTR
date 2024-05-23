@@ -1,29 +1,35 @@
 #include "worker_pool.h"
 
-
+/**
+ * The worker function
+*/
 void* _WP_run_helper_function(void* varg){
     struct WP_Argument* arg = varg;
     struct Queue* queue = arg->queue;
     void (*func)(void *) = arg->func;
-
+    
     while (true){
         struct WP_TaskWrapper* tw = QUEUE_get(queue); // NOTE: This is blocking
-        if (tw->task_type == WP_KILL){
-            QUEUE_register_completion(queue);
+        switch (tw->task_type)
+        {
+        case WP_KILL:
             free(tw);
-            break;
-        }
-        if (tw->task_type == WP_EXEC){
+            QUEUE_register_completion(queue);
+            return NULL;
+        
+        case WP_EXEC:
             func(tw->task);
             free(tw->task);
             free(tw);
             QUEUE_register_completion(queue);
-            continue;
+            break;
+        
+        default:
+            fprintf(stderr, "UNREACHABLE! Unexpected task_type %d\n", tw->task_type);
+            exit(1);
+            break;
         }
-        fprintf(stderr, "UNREACHABLE! Unexpected task_type %d\n", tw->task_type);
-        exit(1);
     }
-    return NULL;
 }
 
 /**
@@ -55,7 +61,7 @@ struct WorkerPool* WP_create(void (*func)(void *), int thread_count){
 
 
     for (int i = 0; i < wp->thread_count; ++i){
-        pthread_create(&(wp->threads[i]), NULL, _WP_run_helper_function, (void*)wp->arg);
+        pthread_create(&wp->threads[i], NULL, _WP_run_helper_function, (void*)wp->arg);
     }
 
     return wp;
@@ -76,12 +82,12 @@ void WP_enqueue_task(struct WorkerPool* worker_pool, void* task){
     tw->task = task;
     tw->task_type = WP_EXEC;
 
-    QUEUE_add(worker_pool->arg->queue, tw);
+    QUEUE_add(worker_pool->arg->queue, tw); // NOTE: This is blocking
 }
 
 /**
  * Kills all threads after all current tasks have been finished
- * NOTE: This will not prevent you from enqueueing additional tasks (But it is useless to do so)
+ * NOTE: This will not prevent you from enqueueing additional tasks (But it is idiotic to do so)
 */
 void WP_request_stop(struct WorkerPool* worker_pool){
     for (int i = 0; i < worker_pool->thread_count; ++i){
@@ -94,7 +100,7 @@ void WP_request_stop(struct WorkerPool* worker_pool){
         tw->task = NULL;
         tw->task_type = WP_KILL;
 
-        QUEUE_add(worker_pool->arg->queue, tw);
+        QUEUE_add(worker_pool->arg->queue, tw); // NOTE: This is blocking
     }
 }
 

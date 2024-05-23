@@ -1,13 +1,19 @@
 /**
- * Contains definitions for handling matrices
-*/
+ * EE23B135 Kaushik G Iyer
+ * 23/05/2024
+ * 
+ * Provides definitions for creating and managing matrices
+ * 
+*/ 
 
 #pragma once
+#include <stdio.h>
+#include <stdlib.h>
 
 struct Matrix{
-    long long int rows;
-    long long int cols;
-    long long int* data;
+    long long int rows; // The number of rows in the matrix
+    long long int cols; // The number of columns in the matrix
+    long long int* data; // An array that stores the matrix data (flattened)
 };
 
 struct Matrix* MATRIX_create(long long int rows, long long int cols);

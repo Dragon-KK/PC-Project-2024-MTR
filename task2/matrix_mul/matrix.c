@@ -1,13 +1,15 @@
-#include <stdio.h>
-#include <stdlib.h>
 #include "matrix.h"
 
 /**
- * Allocates a matrix
- * NOTE: The created matrix must be freed using `MATRIX_free`
- * RAISES: Exits if could not allocate memory
+ * Allocates the memory required for a matrix
+ * RAISES: Exits if could not allocate memory or if given invalid arguments
 */
 struct Matrix* MATRIX_create(long long int rows, long long int cols){
+    if (rows <= 0 || cols <= 0){
+        fprintf(stderr, "ERROR! Invalid dimensions for matrix (%d, %d)\n", rows, cols);
+        exit(1);
+    }
+    
     struct Matrix* matrix = malloc(sizeof(struct Matrix));
     if (matrix == NULL){
         fprintf(stderr, "ERROR! Could not allocated memory for matrix :(\n");
@@ -45,7 +47,7 @@ void MATRIX_print(struct Matrix* matrix, FILE* fd){
 }
 
 /**
- * Gets the index of the element based on row and column number
+ * Gets the index of the element in the flattened array based on row and column number
 */
 inline long long int MATRIX_idx(long long int row, long long int col, struct Matrix* matrix){
     return row * matrix->cols + col;

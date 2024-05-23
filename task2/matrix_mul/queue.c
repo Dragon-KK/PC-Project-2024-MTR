@@ -10,6 +10,7 @@ struct QueueChunk* QUEUE_create_chunk(){
         fprintf(stderr, "ERROR! Could not allocate enough memory for QueueChunk\n");
         exit(1);
     }
+
     qc->tasks = malloc(_QUEUE_CHUNK_SIZE * sizeof(void*));
     if (qc->tasks == NULL){
         fprintf(stderr, "ERROR! Could not allocate enough memory for QueueChunk\n");
@@ -45,7 +46,6 @@ struct Queue* QUEUE_create(){
     pthread_mutex_init(&q->dispatch_counter_mutex, NULL);
     pthread_mutex_init(&q->live_counter_mutex, NULL);
 
-    
     return q;
 }
 
@@ -53,7 +53,7 @@ struct Queue* QUEUE_create(){
  * Frees a chunk allocated by QUEUE_create_chunk
  * NOTE: This will recursively free every chunk that is a child of this
  * NOTE: Consider setting the queue_chunk's next_chunk to NULL to prevent this behaviour
- * NOTE: This will not free any ungetted tasks
+ * NOTE: This will not free any undispatched tasks
 */
 void QUEUE_free_chunk(struct QueueChunk* queue_chunk){
     if (queue_chunk == NULL) return;
@@ -84,18 +84,18 @@ void QUEUE_register_completion(struct Queue* queue){
  * Welcome to mutex hell
  * Blocks until the queue is non empty then pops out the first element
  * NOTE: This is thread safe :)
+ * FUTURE: For more performance one might consider creating more locks so as to allow some reading and writing to happen concurrently
 */
-void* QUEUE_get(struct Queue* queue){ // Consider using pcond
+void* QUEUE_get(struct Queue* queue){
     pthread_mutex_lock(&queue->rw_mutex);
-    while (queue->front->next >= queue->front->filled){
+    while (queue->front->next >= queue->front->filled){ // Wait till reads are possible
         pthread_cond_wait(&queue->read_ready_cond, &queue->rw_mutex);
     }
     
     struct QueueChunk* front = queue->front;
     void* task = front->tasks[front->next++];
-    bool removed_chunk = false;
 
-    if (front->next >= _QUEUE_CHUNK_SIZE){ // All values in chunk have been read
+    if (front->next >= _QUEUE_CHUNK_SIZE){ // All values in chunk have been read, delete the used up chunk
         queue->front = front->next_chunk;
         front->next_chunk = NULL; QUEUE_free_chunk(front);
         
@@ -108,14 +108,14 @@ void* QUEUE_get(struct Queue* queue){ // Consider using pcond
             pthread_mutex_unlock(&queue->live_counter_mutex);
         }
         
-        removed_chunk = true;
         front = queue->front;
     }
 
-    if (removed_chunk) pthread_cond_signal(&queue->write_ready_cond);
-    pthread_cond_signal(&queue->read_ready_cond);
+    // Signal that writes are possible since a spot has been freed
+    pthread_cond_signal(&queue->write_ready_cond);
     pthread_mutex_unlock(&queue->rw_mutex);
 
+    // Update the dispatched counter
     pthread_mutex_lock(&queue->dispatch_counter_mutex);
     ++(queue->dispatched);
     pthread_mutex_unlock(&queue->dispatch_counter_mutex);
@@ -126,26 +126,28 @@ void* QUEUE_get(struct Queue* queue){ // Consider using pcond
  * Welcome to mutex hell
  * Blocks until the queue is not full, then appends to the end of the queue
  * NOTE: This is thread safe :)
+ * FUTURE: For more performance one might consider creating more locks so as to allow some reading and writing to happen concurrently
 */
 void* QUEUE_add(struct Queue* queue, void* task){
     pthread_mutex_lock(&queue->rw_mutex);
     while (queue->back->filled >= _QUEUE_CHUNK_SIZE && queue->live_chunk_count >= _QUEUE_MAX_LIVE_CHUNKS){
+        // Wait till writes are possible
         pthread_cond_wait(&queue->write_ready_cond, &queue->rw_mutex);
     }
     
     struct QueueChunk* back = queue->back;
-    if (back->filled >= _QUEUE_CHUNK_SIZE){ // We need to make a new chunk
+    if (back->filled >= _QUEUE_CHUNK_SIZE){ // The chunk is full, we need to create a new chunk
         back = QUEUE_create_chunk();
         queue->back->next_chunk = back;
         queue->back = back;
         pthread_mutex_lock(&queue->live_counter_mutex);
         ++(queue->live_chunk_count);
         pthread_mutex_unlock(&queue->live_counter_mutex);
-        
     }
 
     back->tasks[back->filled++] = task;
 
+    // Signal that reads are possible since a spot has been freed
     pthread_cond_signal(&queue->read_ready_cond);
     pthread_mutex_unlock(&queue->rw_mutex);
 }

@@ -16,14 +16,15 @@ int main(int argc, char* argv[]){
     srand(time(NULL));
     struct Options options; OPTIONS_set(&options, argc, argv);
 
+    // Create matrices for doing multiplication
     struct Matrix** operand_as = create_matrix_array(options.operations, options.matrix_order, options.matrix_order);
     struct Matrix** operand_bs = create_matrix_array(options.operations, options.matrix_order, options.matrix_order);
     struct Matrix** products   = create_matrix_array(options.operations, options.matrix_order, options.matrix_order);
     
+    // Fill the operand matrices with random values
     init_operand(operand_as, options.operations); init_operand(operand_bs, options.operations);
     
     long long int start = time_ms();
-    
     for (long long int i = 0; i < options.operations; ++i){
         multiply(operand_as[i], operand_bs[i], products[i]);
     }
@@ -31,7 +32,7 @@ int main(int argc, char* argv[]){
     
     printf("Time elapsed: %ldms\n", end - start);
 
-    if (options.log_products){
+    if (options.log_products){ // Stores the results of multiplications in PRODUCTS_LOG_FILE
         FILE* log_file = fopen(PRODUCTS_LOG_FILE, "w");
 
         for (long long int i = 0; i < options.operations; ++i){
@@ -43,6 +44,7 @@ int main(int argc, char* argv[]){
         fclose(log_file);
     }
 
+    // Free the data :)
     free_matrix_array(operand_as, options.operations);
     free_matrix_array(operand_bs, options.operations);
     free_matrix_array(products  , options.operations);
@@ -58,7 +60,7 @@ void multiply(struct Matrix* operand_a, struct Matrix* operand_b, struct Matrix*
         fprintf(stderr, "ERROR! Invalid matrix dimension for multiplication\n");
         exit(1);
     }
-
+    // Just your generic matrix multiplication algorithm
     for (long long int row = 0; row < product->rows; ++row){
         for (long long int col = 0; col < product->cols; ++col){
             product->data[MATRIX_idx(row, col, product)] = 0;
