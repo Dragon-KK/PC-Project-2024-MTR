@@ -18,7 +18,7 @@ For example counter was 1 at some instant. thread1 reads counter and sets it to 
 This essentially causes a skip in an increment
 To fix this just create a mutex and whenever a thread wants to update counter it must first lock the mutex (This ensures that both threads never fall for this race condition)
 :)
-Also I noticed that marking counter as volatile made no difference so idk what's up with that
+Also I noticed that marking counter as volatile made no difference so idk what's up with that (perhaps it makes a difference with higher optimization levels idk)
 
 https://stackoverflow.com/a/4437555
 This post had a very nice explanation on what it meant

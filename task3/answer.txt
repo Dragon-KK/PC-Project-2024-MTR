@@ -1,0 +1,11 @@
+A socket is just an endpoint for communication
+A nice analogy to network communication is communication with cups and string
+A socket is just a cup. One can create a socket for speaking out messages to listeners or create a socket for receiving messages
+
+Usually creating connections goes as follows:
+    -Machine1 listens on some address and awaits connections
+    -Machine2 sends a request to this address asking for a connection
+    -Machine1 creates a socket and allows for communication with machine2's socket
+
+Refer to:
+https://www.cs.rpi.edu/~moorthy/Courses/os98/Pgms/socket.html
