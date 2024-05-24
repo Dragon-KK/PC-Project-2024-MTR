@@ -1,6 +1,20 @@
-// The client enters a number from 1 to 3, indicating the choice of the song to be played, and the server then streams the corresponding song to be played.
-// The server’s console should display the following information: IP address of the client that has connected along with the song name requested.
-
+/**
+ * EE23B135 Kaushik G Iyer
+ * 24/05/2023
+ * 
+ * A server compliant with the given client.c file
+ * Handles upto MAX_CONCURRENT_CLIENTS connections concurrently :)
+ *
+ * Inputs:
+ *  port {number}
+ *  DIR  {path}
+ * 
+ * NOTE: Only recognizes files with `.mp3` suffix
+ * 
+ * Outputs:
+ *  logs
+ * 
+*/ 
 #include <stdbool.h>
 #include <string.h>
 #include <dirent.h>
@@ -16,21 +30,22 @@
 #define SONG_COUNT 3
 
 // 16 is a good number frfr
-#define MAX_CONCURRENT_CLIENTS 1
+#define MAX_CONCURRENT_CLIENTS 16
 
 // Power of 2 moment
 #define BUFFER_SIZE 1024
+#define STREAM_CHUNK_SIZE 1024
 
 #pragma region Business Logix
 struct ThreadArgument{
-    int* live_handlers_count;
-    pthread_mutex_t* live_handlers_count_mutex;
-    pthread_cond_t* live_handler_finish_cond;
+    int* live_handlers_count; // Pointer to integer with the count of live handlers
+    pthread_mutex_t* live_handlers_count_mutex; // Mutex for above counter
+    pthread_cond_t* live_handler_finish_cond; // Conditoin that main loop waits for
 
-    int client_socket;
-    struct sockaddr_in client_address;
+    int client_socket; // Client that is to be handled by the thread
+    struct sockaddr_in client_address; // Address of client to be handled
 
-    char** song_paths;
+    char** song_paths; // List of paths of songs found
 };
 void* handle_client(void* args);
 #pragma endregion
@@ -60,25 +75,27 @@ int main(int argc, char* argv[]){
     pthread_mutex_t live_handlers_count_mutex;
     pthread_mutex_init(&live_handlers_count_mutex, NULL);
 
-
+    // Create socket to listen on
     int server_socket = socket(AF_INET, SOCK_STREAM, 0);
     if (server_socket == -1){
         fprintf(stderr, "ERROR! Could not create socket for listening\n");
         exit(1);
     }
 
+    // This was yoinked from the example given
     struct sockaddr_in server_address;
     memset(&server_address, 0, sizeof(server_address));
-    server_address.sin_family = AF_INET;
-    server_address.sin_addr.s_addr = inet_addr("127.0.0.1");
-    server_address.sin_port = htons(options.port);
+    server_address.sin_family = AF_INET; // Since we are dealing with TCP
+    server_address.sin_addr.s_addr = inet_addr("127.0.0.1"); // Listen on localhost
+    server_address.sin_port = htons(options.port); // Converts to big endian if machine uses little endian
 
+    // Tries to bind socket to address
     if (bind(server_socket, (struct sockaddr*)&server_address, sizeof(server_address)) == -1){
         fprintf(stderr, "ERROR! Could not bind socket to port\n");
         exit(1);
     }
 
-    // Keep a backlog of 2*... cause why not
+    // Allow a backlog of 2*... cause why not
     if (listen(server_socket, 2 * MAX_CONCURRENT_CLIENTS) == -1){
         fprintf(stderr, "ERROR! Could not listen on socket\n");
         exit(1);
@@ -88,7 +105,7 @@ int main(int argc, char* argv[]){
 
     while(true){
         pthread_mutex_lock(&live_handlers_count_mutex);
-        while (live_handlers_count >= MAX_CONCURRENT_CLIENTS){
+        while (live_handlers_count >= MAX_CONCURRENT_CLIENTS){ // Wait until we can accept new connections
             pthread_cond_wait(&live_handler_finish_cond, &live_handlers_count_mutex);
         }
         pthread_mutex_unlock(&live_handlers_count_mutex);
@@ -106,7 +123,8 @@ int main(int argc, char* argv[]){
 
         socklen_t client_address_size = sizeof(ta->client_address);
         memset(&ta->client_address, 0, client_address_size);
-        
+
+        // Accept connection (This blocks if no request currently exists)        
         ta->client_socket = accept(server_socket, (struct sockaddr*)&(ta->client_address), &client_address_size);
 
         if (ta->client_socket == -1){
@@ -120,6 +138,8 @@ int main(int argc, char* argv[]){
         printf("Current active connections %d/%d\n", live_handlers_count, MAX_CONCURRENT_CLIENTS);
         pthread_mutex_unlock(&live_handlers_count_mutex);   
         
+        // Spawn a thread to handle the connection
+        // NOTE: We don't really need to keep track of the threadID since we never need to join the thread (its ok for it to just die if we Ctrl+C out)
         pthread_t thread;
         pthread_create(&thread, NULL, handle_client, (void*)ta);
     }
@@ -131,12 +151,15 @@ int main(int argc, char* argv[]){
 
 #pragma region Business Logix Impl
 /**
- * The request handler that is run on a new thread
- * NOTE: This will free the argument structure given to it :)
+ * Handles a single client (To be run on a new thread)
+ * NOTE: This will free the argument given to it :)
 */
 void* handle_client(void* vta){
+    // Logs with formatting
     #define client_logf(ostream, message, ...) fprintf(ostream, "[%s:%d] "message"\n", inet_ntoa(ta->client_address.sin_addr), htons(ta->client_address.sin_port), __VA_ARGS__)
+    // Logs without formatting
     #define client_log(ostream, message) fprintf(ostream, "[%s:%d] "message"\n", inet_ntoa(ta->client_address.sin_addr), htons(ta->client_address.sin_port))
+    
     #define close_client() { \
         close(ta->client_socket); \
         client_log(stdout, "Closed connection with client"); \
@@ -153,7 +176,7 @@ void* handle_client(void* vta){
     
     client_log(stdout, "Established connection with client");
     
-    char buffer[BUFFER_SIZE];
+    char buffer[BUFFER_SIZE]; // Receive the song number requested
     int result = recv(ta->client_socket, buffer, BUFFER_SIZE, 0);
     if (result == 0){
         client_log(stderr, "ERROR! Client closed connection before message was sent");
@@ -177,11 +200,15 @@ void* handle_client(void* vta){
         close_client();
     }
 
-    while (true) {
-        size_t num_read = fread(buffer, 1, BUFFER_SIZE, fd);
-        if (num_read == 0){ // Reached EOF
+    while (true) { // Stream the song to the client
+        size_t num_read = fread(buffer, 1, STREAM_CHUNK_SIZE, fd);
+        if (num_read == 0){ // Reached EOF or some error happened lmao
+            if (ferror(fd)){ // Check if error happened
+                client_log(stderr, "ERROR! Could not read file :)");
+            } else{ // No error happened
+                client_log(stdout, "Successfully streamed song to client :)");
+            }
             fclose(fd);
-            client_log(stdout, "Successfully streamed song to client :)");
             close_client();
         }
         ssize_t num_sent = send(ta->client_socket, buffer, num_read, 0);
