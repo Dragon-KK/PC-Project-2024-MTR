@@ -16,7 +16,7 @@
 #define SONG_COUNT 3
 
 // 16 is a good number frfr
-#define MAX_CONCURRENT_CLIENTS 16
+#define MAX_CONCURRENT_CLIENTS 1
 
 // Power of 2 moment
 #define BUFFER_SIZE 1024
@@ -87,9 +87,11 @@ int main(int argc, char* argv[]){
     printf("Listening on %s:%d\n", inet_ntoa(server_address.sin_addr), options.port);
 
     while(true){
+        pthread_mutex_lock(&live_handlers_count_mutex);
         while (live_handlers_count >= MAX_CONCURRENT_CLIENTS){
             pthread_cond_wait(&live_handler_finish_cond, &live_handlers_count_mutex);
         }
+        pthread_mutex_unlock(&live_handlers_count_mutex);
 
         struct ThreadArgument* ta = malloc(sizeof(struct ThreadArgument));
         if (ta == NULL){
@@ -105,7 +107,7 @@ int main(int argc, char* argv[]){
         socklen_t client_address_size = sizeof(ta->client_address);
         memset(&ta->client_address, 0, client_address_size);
         
-        ta->client_socket = accept(server_socket, (struct sockaddr*)&ta->client_address, &client_address_size);
+        ta->client_socket = accept(server_socket, (struct sockaddr*)&(ta->client_address), &client_address_size);
 
         if (ta->client_socket == -1){
             fprintf(stderr, "ERROR! Could not accept connection\n");
@@ -113,11 +115,17 @@ int main(int argc, char* argv[]){
             continue;
         }
 
+        pthread_mutex_lock(&live_handlers_count_mutex);
+        ++live_handlers_count;
+        printf("Current active connections %d/%d\n", live_handlers_count, MAX_CONCURRENT_CLIENTS);
+        pthread_mutex_unlock(&live_handlers_count_mutex);   
+        
         pthread_t thread;
-        pthread_create(&thread, NULL, handle_client, (void*)ta);     
+        pthread_create(&thread, NULL, handle_client, (void*)ta);
     }
 
     // This is pretty much unreachable, but ideally you would catch the Ctrl+C signal and break from the loop above
+    close(server_socket);
     free_song_paths(song_paths);
 }
 
@@ -129,12 +137,12 @@ int main(int argc, char* argv[]){
 void* handle_client(void* vta){
     #define client_logf(ostream, message, ...) fprintf(ostream, "[%s:%d] "message"\n", inet_ntoa(ta->client_address.sin_addr), htons(ta->client_address.sin_port), __VA_ARGS__)
     #define client_log(ostream, message) fprintf(ostream, "[%s:%d] "message"\n", inet_ntoa(ta->client_address.sin_addr), htons(ta->client_address.sin_port))
-    
     #define close_client() { \
         close(ta->client_socket); \
         client_log(stdout, "Closed connection with client"); \
         pthread_mutex_lock(ta->live_handlers_count_mutex); \
-        --(*(ta->live_handlers_count)); \
+        --(*ta->live_handlers_count); \
+        printf("Current active connections %d/%d\n", *ta->live_handlers_count, MAX_CONCURRENT_CLIENTS); \
         pthread_cond_signal(ta->live_handler_finish_cond); \
         pthread_mutex_unlock(ta->live_handlers_count_mutex); \
         free(vta); \
@@ -142,11 +150,6 @@ void* handle_client(void* vta){
     }
 
     struct ThreadArgument* ta = vta;
-
-    // Remember that references to mutex and cond are passed
-    pthread_mutex_lock(ta->live_handlers_count_mutex);
-    ++(*(ta->live_handlers_count));
-    pthread_mutex_unlock(ta->live_handlers_count_mutex);
     
     client_log(stdout, "Established connection with client");
     
@@ -166,11 +169,11 @@ void* handle_client(void* vta){
         client_logf(stderr, "ERROR! Client sent invalid song index `%d`", song_idx);
         close_client();
     }
-    client_logf(stdout, "Client request song `%d`", song_idx);
+    client_logf(stdout, "Client requested song `%d` (`%s`)", song_idx, ta->song_paths[song_idx - 1]);
 
     FILE* fd = fopen(ta->song_paths[song_idx - 1], "rb");
     if (fd == NULL){
-        client_logf(stderr, "ERROR! Could not open song[%d] (`%s`)", song_idx, ta->song_paths[song_idx - 1]);
+        client_logf(stderr, "ERROR! Could not open song `%d` (`%s`)", song_idx, ta->song_paths[song_idx - 1]);
         close_client();
     }
 
@@ -241,6 +244,11 @@ char** get_song_paths_from_dir(char* directory){
     if (idx != SONG_COUNT){
         fprintf(stderr, "ERROR! Was only able to load %d/%d songs from `%s`\n", idx, SONG_COUNT, directory);
         exit(1);
+    }
+
+    printf("Found %d songs\n", SONG_COUNT);
+    for (int i = 0; i < SONG_COUNT; ++i){
+        printf("%d: `%s`\n", i + 1, song_paths[i]);
     }
     return song_paths;
 }

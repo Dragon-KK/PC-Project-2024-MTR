@@ -41,7 +41,7 @@ void play_streamed_mp3(int server_socket)
     }
 
     // Close the write end of the pipe to signal end of input
-    fclose(mpg123_pipe);
+    // fclose(mpg123_pipe);
     pclose(mpg123_pipe);
     /* I have not handled any error conditions */
 }
