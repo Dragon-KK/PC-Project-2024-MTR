@@ -64,8 +64,17 @@ struct Options{
 void set_options(struct Options* options, int argc, char* argv[]);
 #pragma endregion
 
+#include <signal.h>
+
+volatile sig_atomic_t stop;
+int server_socket;
+void inthand(int signum) {
+    stop = 1;
+    close(server_socket);
+}
 
 int main(int argc, char* argv[]){
+    signal(SIGINT, inthand);
     struct Options options; set_options(&options, argc, argv);
 
     char** song_paths = get_song_paths_from_dir(options.music_directory);
@@ -76,7 +85,7 @@ int main(int argc, char* argv[]){
     pthread_mutex_init(&live_handlers_count_mutex, NULL);
 
     // Create socket to listen on
-    int server_socket = socket(AF_INET, SOCK_STREAM, 0);
+    server_socket = socket(AF_INET, SOCK_STREAM, 0);
     if (server_socket == -1){
         fprintf(stderr, "ERROR! Could not create socket for listening\n");
         exit(1);
@@ -103,7 +112,8 @@ int main(int argc, char* argv[]){
 
     printf("Listening on %s:%d\n", inet_ntoa(server_address.sin_addr), options.port);
 
-    while(true){
+    stop = 0;
+    while(!stop){
         pthread_mutex_lock(&live_handlers_count_mutex);
         while (live_handlers_count >= MAX_CONCURRENT_CLIENTS){ // Wait until we can accept new connections
             pthread_cond_wait(&live_handler_finish_cond, &live_handlers_count_mutex);
@@ -126,6 +136,10 @@ int main(int argc, char* argv[]){
 
         // Accept connection (This blocks if no request currently exists)        
         ta->client_socket = accept(server_socket, (struct sockaddr*)&(ta->client_address), &client_address_size);
+        if (stop){
+            close(ta->client_socket);
+            break;
+        };
 
         if (ta->client_socket == -1){
             fprintf(stderr, "ERROR! Could not accept connection\n");
@@ -144,9 +158,11 @@ int main(int argc, char* argv[]){
         pthread_create(&thread, NULL, handle_client, (void*)ta);
     }
 
-    // This is pretty much unreachable, but ideally you would catch the Ctrl+C signal and break from the loop above
+    // We exit the while loop when Ctrl+C
     close(server_socket);
     free_song_paths(song_paths);
+    printf("\nStopping server :)\n");
+    return 0;
 }
 
 #pragma region Business Logix Impl
