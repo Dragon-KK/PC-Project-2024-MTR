@@ -1,4 +1,4 @@
-I have some experience with socket programming, I made a rather crude pong game that can be played between two different computers on the same network back in school
+I have some experience with socket programming, I made a rather crude pong game (https://github.com/Dragon-KK/ComputerProject2021) that can be played between two different computers on the same network back in school
 Looking at it now I made a few decisions that I'll make differently right now. I want to see how to properly going about doing things like this.
 Also I want to get experience in working in a team.
 (I also don't have any PORs and now am getting massive fomo)
