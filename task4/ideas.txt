@@ -1,1 +1,17 @@
-This shit is gay af
+Standard top view batlle royal where your score is based on how long you survive
+I'm thinking we'll allow for 1 main weapon and three skill slots
+After certain intervals of time the playing area gets smaller and players will be allowed to upgrade one of their abilities
+The main weapon shall be controlled by the mouse and each skill will have some unique interaction
+
+Some examples of weapons are:
+    -- A mouse guided rocket (Once you shoot a new rocket you lose control of the old rocket)
+    -- A laser gun that takes time to charge up 
+    -- A machine gun
+    
+Some examples of skills are:
+    -- A passive skill to recover health when not moving
+    -- A passive skill to increase movement speed
+    -- An ability to place mirrored walls (Can synergise with the laser gun)
+    -- A teleportation ability
+
+This kind of a system will allow us to add depth to the game (We are limited only by our ability to code out everything in time)

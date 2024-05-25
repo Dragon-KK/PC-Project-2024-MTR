@@ -1,0 +1,7 @@
+I have some experience with socket programming, I made a rather crude pong game that can be played between two different computers on the same network back in school
+Looking at it now I made a few decisions that I'll make differently right now. I want to see how to properly going about doing things like this.
+Also I want to get experience in working in a team.
+(I also don't have any PORs and now am getting massive fomo)
+As for my weaknesses, at times I just feel unmotivated and lazy. I kinda just stop existing for a few days when that happens :D
+
+I don't have any other commitments except for acads (which I'll prolly take lite). I'll have more than enough time to work on this project :)

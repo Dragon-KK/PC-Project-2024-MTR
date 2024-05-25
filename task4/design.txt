@@ -1,0 +1,3 @@
+
+3) Design a component inside the game (It could be a tank or any of the ideas you have proposed above). Make sure that it is feasible keeping in mind your proposed libraries.
+We do not expect a code, but only a rough design (You can make it however you like - Paint, Canva or even a rough hand drawing).

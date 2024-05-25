@@ -1,0 +1,5 @@
+For graphics we can use OpenGL, this allows for interaction with cross platform low level apis
+Another nice option is to use Qt for graphics.
+
+I'd suggest we use cpp to code out the game as there are very nice libraries such as `https://github.com/mas-bandwidth/yojimbo` to handle networking
+`https://github.com/ValveSoftware/GameNetworkingSockets` is also a good option
