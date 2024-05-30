@@ -68,7 +68,7 @@ void set_options(struct Options* options, int argc, char* argv[]);
 
 volatile sig_atomic_t stop;
 int server_socket;
-void inthand(int signum) {
+void inthand(int signum) { // https://stackoverflow.com/a/54267342
     stop = 1;
     close(server_socket);
 }
@@ -110,6 +110,7 @@ int main(int argc, char* argv[]){
         exit(1);
     }
 
+    // https://www.gta.ufrj.br/ensino/eel878/sockets/inet_ntoaman.html
     printf("Listening on %s:%d\n", inet_ntoa(server_address.sin_addr), options.port);
 
     stop = 0;
@@ -216,6 +217,7 @@ void* handle_client(void* vta){
         close_client();
     }
 
+    // https://stackoverflow.com/a/65029800
     while (true) { // Stream the song to the client
         size_t num_read = fread(buffer, 1, STREAM_CHUNK_SIZE, fd);
         if (num_read == 0){ // Reached EOF or some error happened lmao
@@ -263,7 +265,7 @@ char** get_song_paths_from_dir(char* directory){
     DIR *d;
     struct dirent *dir;
     d = opendir(directory);
-    if (d) {
+    if (d) { // https://stackoverflow.com/a/4204758
         while ((dir = readdir(d)) != NULL && idx < SONG_COUNT) {
             if (does_contain_suffix(dir->d_name, ".mp3")){
                 // Enough space to store null terminated string of joint path
