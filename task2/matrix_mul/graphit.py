@@ -1,17 +1,26 @@
 import sys
 from pathlib import Path
 import subprocess
+import json
+
+from scipy.interpolate import interp1d
+import numpy as np
+import matplotlib.pyplot as plt
+
+
+STORE_DATA = False
+PLOT_DATA = True
 
 EXECUTABLES = [
+    "parallel10000_10000.exe",
     "parallel.exe",
     "parallel10000_1000.exe",
     "parallel1000_10000.exe",
-    "parallel10000_10000.exe",
     "parallel100_100.exe",
     "sequential.exe",
 ]
 
-CUTOFF_P = 0.2
+CUTOFF_P = 0.1
 
 NTEST_LIST = [
     (10, 1000, 100),
@@ -24,21 +33,21 @@ NTEST_LIST = [
     (70, 1000, 100),
     (80, 1000, 100),
     (90, 1000, 100),
-    (100, 1000, 100),
-    (125, 800, 100),
-    (150, 500, 100),
-    (175, 100, 100),
-    (200, 50, 100),
-    (300, 50, 100),
-    (400, 50, 100),
-    (500, 20, 100),
-    (600, 15, 100),
-    (750, 10,  50),
-    (900, 10, 50),
-    (1000, 10, 50),
-    (1500, 5, 10),
-    (2000, 5, 10),
-    (2500, 1, 10),
+    (100, 100, 100),
+    (125, 80, 100),
+    (150, 50, 100),
+    (175, 10, 100),
+    (200, 5, 10),
+    (300, 5, 10),
+    (400, 5, 10),
+    (500, 5, 10),
+    (600, 5, 10),
+    (750, 5, 5),
+    (900, 5, 5),
+    (1000, 5, 5),
+    (1500, 2, 5),
+    (2000, 1, 5),
+    (2500, 1, 5),
 ]
 
 
@@ -74,13 +83,38 @@ def main(path):
 
     # input("Pres ENTER to dump")
     with open(path + ".json", 'w') as f:
-        import json
+        
         json.dump(results, f)
     # input("Pres ENTER to finish")
 
     return 0
     
 if __name__ == '__main__':
-    for path in EXECUTABLES:
-        main(path)
+    if STORE_DATA:
+        for path in EXECUTABLES:
+            main(path)
 
+    if PLOT_DATA:
+        avgs = {}
+        for path in EXECUTABLES:
+            with open(path + ".json") as f:
+                xs = json.load(f)
+                avgs[path] = ([i for i in xs], [xs[i]['avg'] for i in xs])
+
+        for path in EXECUTABLES:
+            x = np.array(avgs[path][0])
+            n = np.arange(x.shape[0]) 
+            y = np.array(avgs[path][1])
+
+
+            x_spline = interp1d(n, x,kind='cubic')
+
+            n_ = np.linspace(n.min(), n.max(), 500)
+            y_spline = interp1d(n, y,kind='cubic')
+
+            x_ = x_spline(n_)
+            y_ = y_spline(n_)
+
+
+
+            plt.plot(x_, y_)
