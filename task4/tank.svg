@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg viewBox="0 0 500 500" xmlns="http://www.w3.org/2000/svg" xmlns:bx="https://boxy-svg.com">
+  <rect x="114.812" y="154.431" width="213.454" height="197.283" style="fill: rgb(216, 216, 216); stroke-linecap: round; stroke-linejoin: round; stroke: rgb(38, 38, 42); paint-order: stroke; stroke-width: 50px;"/>
+  <rect x="132.277" y="116.916" width="179.172" height="282.665" style="fill: rgb(56, 165, 110); stroke-miterlimit: 8.87; stroke-linejoin: round; stroke-linecap: round; stroke: rgb(44, 65, 46); stroke-width: 38px;"/>
+  <rect x="149.094" y="98.157" width="148.771" height="320.828" style="stroke: rgb(0, 0, 0); stroke-width: 0px; fill: rgb(56, 165, 110);"/>
+  <path style="stroke: rgb(0, 0, 0); stroke-width: 0px; fill: rgb(41, 139, 95); transform-origin: 506.8px 250.2px;" transform="matrix(0.720412969589, -0.367069005966, 0.365205019712, 0.716755926609, -281.056210400942, -62.565216717713)" d="M 585.6 250.2 A 78.8 78.8 0 1 1 506.8 171.4 L 506.8 212.376 A 37.824 37.824 0 1 0 544.624 250.2 Z" bx:shape="pie 506.8 250.2 37.824 78.8 90 360 1@0918fa9d"/>
+  <rect x="-37.079" y="-41.524" width="3.703" height="163.24" style="stroke-linejoin: round; stroke-width: 38px; fill: rgb(41, 139, 95); stroke: rgb(23, 77, 52); transform-origin: -35.2275px 40.096px;" transform="matrix(-0.891006946564, -0.453990012407, -0.453990012407, 0.891006946564, 296.613582583147, 76.556263894215)"/>
+  <ellipse style="stroke: rgb(0, 0, 0); stroke-width: 0px; fill: rgb(19, 152, 92);" cx="222.51" cy="343.197" rx="41.721" ry="41.721"/>
+  <path d="M 424.159 146.538 Q 434.347 117.65 444.534 146.538 L 464.909 204.315 Q 475.097 233.203 454.722 233.203 L 413.971 233.203 Q 393.596 233.203 403.784 204.315 Z" style="stroke: rgb(0, 0, 0); stroke-width: 0px; fill: rgb(23, 77, 52); transform-origin: 434.347px 182.648px;" transform="matrix(-0.891006946564, -0.453990012407, 0.453990012407, -0.891006946564, -140.311030428439, -132.246283231383)" bx:shape="triangle 393.596 117.65 81.501 115.553 0.5 0.25 1@db6db51f"/>
+</svg>
