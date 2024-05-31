@@ -7,6 +7,7 @@ from scipy.interpolate import interp1d
 import numpy as np
 import matplotlib.pyplot as plt
 
+# parallelX_Y.exe: X -> QUEUE_CHUNK_SIZE, Y -> MAX_LIVE_CHUNKS
 
 STORE_DATA = False
 PLOT_DATA = True
@@ -117,4 +118,9 @@ if __name__ == '__main__':
 
 
 
-            plt.plot(x_, y_)
+            plt.plot(x_, y_, label=path)
+        plt.xlabel("N")
+        plt.ylabel("Average time taken per multiplication")
+        plt.title("Time taken by different implementations")
+        plt.legend(loc="upper left")
+        plt.show()

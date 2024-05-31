@@ -1,0 +1,4 @@
+The executable parallelX_Y.exe is the parallel implementation with QUEUE_CHUNK_SIZE = X and MAX_LIVE_CHUNKS = Y
+(The plain parallel.exe is the implementation with X = 1000, and Y = 1000)
+
+Time taken is in milliseconds
